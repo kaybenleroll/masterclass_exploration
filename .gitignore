@@ -1,3 +1,7 @@
 .Rhistory
 .RData
 .Rproj.user/
+
+data/carinsurance_frequency.csv
+data/carinsurance_severity.csv
+data/online_retail.xlsx
