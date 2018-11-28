@@ -1,6 +1,6 @@
 ---
-title: "Data Exploration for Dataset __DATASET_NAME__"
-author: "__AUTHOR_NAME__"
+title: "Data Exploration for Life Insurance Dataset"
+author: "Mick Cooney <mcooney@agrippadataconsulting.com>"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -219,18 +219,18 @@ First we load the dataset.
 ### Data is loaded into dataset rawdata_tbl here
 
 ### We may wish to set column typs
-#data_col_types <- cols(
-#    VAR1 = col_character()
-#   ,VAR2 = col_date()
-#   ,VAR3 = col_number()
-#)
+data_col_types <- cols(
+  #  VAR1 = col_character()
+  # ,VAR2 = col_date()
+  # ,VAR3 = col_number()
+)
 
 ### Data is loaded into dataset rawdata_tbl here
-#rawdata_tbl <- read_csv(DATAFILE
-#                       ,locale    = locale()
-#                       ,col_types = data_col_types
-#                       ,progress  = FALSE
-#                       )
+rawdata_tbl <- read_csv('data/lifeinsurance_data.csv'
+                       ,locale    = locale()
+                       ,col_types = data_col_types
+                       ,progress  = FALSE
+                        )
 
 glimpse(rawdata_tbl)
 ```
@@ -252,7 +252,7 @@ glimpse(data_tbl)
 
 
 ```{r, echo=FALSE}
-knitr::knit_exit()
+#knitr::knit_exit()
 ```
 
 
@@ -269,7 +269,7 @@ new variables calculated from existing variables in the data.
 
 
 ```{r, echo=FALSE}
-knitr::knit_exit()
+#knitr::knit_exit()
 ```
 
 
@@ -469,14 +469,14 @@ if(length(drop_vars) > 0) {
 ```
 
 ```{r, echo=FALSE}
-knitr::knit_exit()
+#knitr::knit_exit()
 ```
 
 
 ## Write Loaded Data to Disk
 
 ```{r write_loaded_data_disk, echo=TRUE}
-data_tbl %>% write_csv(path = 'data/loaded_data.csv')
+#data_tbl %>% write_csv(path = 'data/loaded_data.csv')
 ```
 
 
@@ -629,6 +629,66 @@ knitr::knit_exit()
 # Bivariate Data Exploration
 
 We now move on to looking at bivariate plots of the data set.
+
+## Pairs Plots
+
+Pairs plots area very useful way of getting a quick idea of the relationships
+between variables in a data set.
+
+Unfortunately, they do not scale well. Too many rows (say more than 5,000) can
+slow down the rendering, and more than 10 columns can make the plots
+uninterpretable as each cell is too small.
+
+The technique is useful, so to circumvent these issues we sample the dataset.
+We select random columns and rows, and make a pairs plot of the subset,
+repeating this process for a number of iterations.
+
+```{r plot_pairsplot, echo=TRUE, warning=FALSE, message=FALSE, fig.width = 20, fig.height=15}
+dataexp_pairsplot_itercount <-    10
+dataexp_pairsplot_colcount  <-     7
+dataexp_pairsplot_rowcount  <-  5000
+
+if(ncol(data_tbl) > dataexp_pairsplot_colcount ||
+   nrow(data_tbl) > dataexp_pairsplot_rowcount) {
+
+    ### Ugly hack to work around current dplyr bug for mutate_if
+    if(any(sapply(explore_data_tbl, is.logical))) {
+        conv_tbl <- explore_data_tbl %>%
+            mutate_if(is.logical, as.factor)
+    } else {
+        conv_tbl <- explore_data_tbl
+    }
+
+    conv_tbl <- conv_tbl %>%
+        mutate_if(function(x) (is.character(x) || is.factor(x)) && !all(is.na(x))
+                 ,function(x) fct_lump(x, n = 9))
+
+
+    for(i in 1:dataexp_pairsplot_itercount) {
+        cat("--\n")
+        cat(paste0("Pairs plot iter: ", i, "\n"))
+
+        pairs_tbl <- conv_tbl %>%
+            create_ggpairs_tbl(sample_cols = dataexp_pairsplot_colcount
+                              ,sample_rows = dataexp_pairsplot_rowcount
+                               )
+
+        cat(paste0("Columns: ", paste0(names(pairs_tbl), collapse = ', '), "\n"))
+
+        pairs_tbl %>%
+            ggpairs(cardinality_threshold = NULL
+                   ,lower = list(combo = wrap('facethist', bins = 25))
+                   ) %>%
+            print
+    }
+} else {
+    ggpairs(data_tbl) %>% print
+}
+```
+
+```{r free_memory_bivariateplots, echo=FALSE, warning=FALSE}
+rm(conv_tbl, pairs_tbl)
+```
 
 
 ## Facet Plots on Variables
@@ -794,72 +854,6 @@ rm(plot_var, plot_tbl)
 ```{r, echo=FALSE}
 knitr::knit_exit()
 ```
-
-
-## Pairs Plots
-
-Pairs plots area very useful way of getting a quick idea of the relationships
-between variables in a data set.
-
-Unfortunately, they do not scale well. Too many rows (say more than 5,000) can
-slow down the rendering, and more than 10 columns can make the plots
-uninterpretable as each cell is too small.
-
-The technique is useful, so to circumvent these issues we sample the dataset.
-We select random columns and rows, and make a pairs plot of the subset,
-repeating this process for a number of iterations.
-
-```{r plot_pairsplot, echo=TRUE, warning=FALSE, message=FALSE, fig.width = 20, fig.height=15}
-dataexp_pairsplot_itercount <-    10
-dataexp_pairsplot_colcount  <-     7
-dataexp_pairsplot_rowcount  <-  5000
-
-if(ncol(data_tbl) > dataexp_pairsplot_colcount ||
-   nrow(data_tbl) > dataexp_pairsplot_rowcount) {
-
-    ### Ugly hack to work around current dplyr bug for mutate_if
-    if(any(sapply(explore_data_tbl, is.logical))) {
-        conv_tbl <- explore_data_tbl %>%
-            mutate_if(is.logical, as.factor)
-    } else {
-        conv_tbl <- explore_data_tbl
-    }
-
-    conv_tbl <- conv_tbl %>%
-        mutate_if(function(x) (is.character(x) || is.factor(x)) && !all(is.na(x))
-                 ,function(x) fct_lump(x, n = 9))
-
-
-    for(i in 1:dataexp_pairsplot_itercount) {
-        cat("--\n")
-        cat(paste0("Pairs plot iter: ", i, "\n"))
-
-        pairs_tbl <- conv_tbl %>%
-            create_ggpairs_tbl(sample_cols = dataexp_pairsplot_colcount
-                              ,sample_rows = dataexp_pairsplot_rowcount
-                               )
-
-        cat(paste0("Columns: ", paste0(names(pairs_tbl), collapse = ', '), "\n"))
-
-        pairs_tbl %>%
-            ggpairs(cardinality_threshold = NULL
-                   ,lower = list(combo = wrap('facethist', bins = 25))
-                   ) %>%
-            print
-    }
-} else {
-    ggpairs(data_tbl) %>% print
-}
-```
-
-```{r free_memory_bivariateplots, echo=FALSE, warning=FALSE}
-rm(conv_tbl, pairs_tbl)
-```
-
-```{r, echo=FALSE}
-knitr::knit_exit()
-```
-
 
 
 # Multivariate Visualisation
