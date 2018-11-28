@@ -1,5 +1,5 @@
 ---
-title: "Data Exploration for Car Insurance Dataset"
+title: "Data Exploration for Car Insurance Data"
 author: "Mick Cooney <mcooney@agrippadataconsulting.com>"
 date: "`r Sys.Date()`"
 output:
@@ -217,12 +217,10 @@ First we load the dataset.
 ```{r load_dataset, echo=TRUE}
 ### _TEMPLATE_
 ### Data is loaded into dataset rawdata_tbl here
-
-### We may wish to set column types
+### We may wish to set column typs
 data_col_types <- cols(
-   #  VAR1 = col_character()
-   # ,VAR2 = col_date()
-   # ,VAR3 = col_number()
+    PolicyID = col_character()
+   ,ClaimNb  = col_integer()
 )
 
 ### Data is loaded into dataset rawdata_tbl here
@@ -246,7 +244,7 @@ data_tbl <- rawdata_tbl
 
 names(data_tbl) <- rawdata_tbl %>% names %>% clean_names
 
-#glimpse(data_tbl)
+glimpse(data_tbl)
 ```
 
 
@@ -622,74 +620,13 @@ for(plot_varname in datetime_vars) {
 
 
 ```{r, echo=FALSE}
-knitr::knit_exit()
+#knitr::knit_exit()
 ```
 
 
 # Bivariate Data Exploration
 
 We now move on to looking at bivariate plots of the data set.
-
-## Pairs Plots
-
-Pairs plots area very useful way of getting a quick idea of the relationships
-between variables in a data set.
-
-Unfortunately, they do not scale well. Too many rows (say more than 5,000) can
-slow down the rendering, and more than 10 columns can make the plots
-uninterpretable as each cell is too small.
-
-The technique is useful, so to circumvent these issues we sample the dataset.
-We select random columns and rows, and make a pairs plot of the subset,
-repeating this process for a number of iterations.
-
-```{r plot_pairsplot, echo=TRUE, warning=FALSE, message=FALSE, fig.width = 20, fig.height=15}
-dataexp_pairsplot_itercount <-    10
-dataexp_pairsplot_colcount  <-     7
-dataexp_pairsplot_rowcount  <-  5000
-
-if(ncol(data_tbl) > dataexp_pairsplot_colcount ||
-   nrow(data_tbl) > dataexp_pairsplot_rowcount) {
-
-    ### Ugly hack to work around current dplyr bug for mutate_if
-    if(any(sapply(explore_data_tbl, is.logical))) {
-        conv_tbl <- explore_data_tbl %>%
-            mutate_if(is.logical, as.factor)
-    } else {
-        conv_tbl <- explore_data_tbl
-    }
-
-    conv_tbl <- conv_tbl %>%
-        mutate_if(function(x) (is.character(x) || is.factor(x)) && !all(is.na(x))
-                 ,function(x) fct_lump(x, n = 9))
-
-
-    for(i in 1:dataexp_pairsplot_itercount) {
-        cat("--\n")
-        cat(paste0("Pairs plot iter: ", i, "\n"))
-
-        pairs_tbl <- conv_tbl %>%
-            create_ggpairs_tbl(sample_cols = dataexp_pairsplot_colcount
-                              ,sample_rows = dataexp_pairsplot_rowcount
-                               )
-
-        cat(paste0("Columns: ", paste0(names(pairs_tbl), collapse = ', '), "\n"))
-
-        pairs_tbl %>%
-            ggpairs(cardinality_threshold = NULL
-                   ,lower = list(combo = wrap('facethist', bins = 25))
-                   ) %>%
-            print
-    }
-} else {
-    ggpairs(data_tbl) %>% print
-}
-```
-
-```{r free_memory_bivariateplots, echo=FALSE, warning=FALSE}
-rm(conv_tbl, pairs_tbl)
-```
-
 
 ## Facet Plots on Variables
 
@@ -698,8 +635,8 @@ a very natural way to observe the data.
 
 ```{r bivariate_facet_data, echo=TRUE}
 ### _TEMPLATE_
-### facet_varname <- ''
-facet_varname   <- coltype_lst$split$discrete[1]
+facet_varname <- 'gas'
+#facet_varname   <- coltype_lst$split$discrete[1]
 
 
 facet_count_max <- 3
@@ -848,6 +785,72 @@ for(plot_varname in datetime_vars) {
 
 ```{r free_memory_facetplot, echo=FALSE}
 rm(plot_var, plot_tbl)
+```
+
+
+```{r, echo=FALSE}
+knitr::knit_exit()
+```
+
+
+## Pairs Plots
+
+Pairs plots area very useful way of getting a quick idea of the relationships
+between variables in a data set.
+
+Unfortunately, they do not scale well. Too many rows (say more than 5,000) can
+slow down the rendering, and more than 10 columns can make the plots
+uninterpretable as each cell is too small.
+
+The technique is useful, so to circumvent these issues we sample the dataset.
+We select random columns and rows, and make a pairs plot of the subset,
+repeating this process for a number of iterations.
+
+```{r plot_pairsplot, echo=TRUE, warning=FALSE, message=FALSE, fig.width = 20, fig.height=15}
+dataexp_pairsplot_itercount <-    10
+dataexp_pairsplot_colcount  <-     7
+dataexp_pairsplot_rowcount  <-  5000
+
+if(ncol(data_tbl) > dataexp_pairsplot_colcount ||
+   nrow(data_tbl) > dataexp_pairsplot_rowcount) {
+
+    ### Ugly hack to work around current dplyr bug for mutate_if
+    if(any(sapply(explore_data_tbl, is.logical))) {
+        conv_tbl <- explore_data_tbl %>%
+            mutate_if(is.logical, as.factor)
+    } else {
+        conv_tbl <- explore_data_tbl
+    }
+
+    conv_tbl <- conv_tbl %>%
+        mutate_if(function(x) (is.character(x) || is.factor(x)) && !all(is.na(x))
+                 ,function(x) fct_lump(x, n = 9))
+
+
+    for(i in 1:dataexp_pairsplot_itercount) {
+        cat("--\n")
+        cat(paste0("Pairs plot iter: ", i, "\n"))
+
+        pairs_tbl <- conv_tbl %>%
+            create_ggpairs_tbl(sample_cols = dataexp_pairsplot_colcount
+                              ,sample_rows = dataexp_pairsplot_rowcount
+                               )
+
+        cat(paste0("Columns: ", paste0(names(pairs_tbl), collapse = ', '), "\n"))
+
+        pairs_tbl %>%
+            ggpairs(cardinality_threshold = NULL
+                   ,lower = list(combo = wrap('facethist', bins = 25))
+                   ) %>%
+            print
+    }
+} else {
+    ggpairs(data_tbl) %>% print
+}
+```
+
+```{r free_memory_bivariateplots, echo=FALSE, warning=FALSE}
+rm(conv_tbl, pairs_tbl)
 ```
 
 
